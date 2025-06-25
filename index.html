@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Play Video Cuteee</title>
+    <title>Video Player Murad</title>
+    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     
+    <!-- React and Babel for in-browser JSX transformation -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -13,14 +15,14 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
-        /* --- NEW: Lush Forest Color Theme --- */
+        /* --- Root Variables and Body Styling --- */
         :root {
-            --primary-color: #2ecc71; /* Vibrant Mint Green */
-            --secondary-color: #f1c40f; /* Warm Gold */
-            --bg-color: #1a3a3a; /* Deep Forest Teal */
+            --primary-color: #8e44ad;
+            --secondary-color: #c0392b;
+            --highlight-color: #ff7675;
+            --bg-color: #2c2c34;
             --text-color: #ecf0f1;
-            --controls-bg: rgba(20, 30, 30, 0.85);
-            --error-color: #e74c3c;
+            --controls-bg: rgba(44, 44, 52, 0.85);
         }
 
         body {
@@ -38,147 +40,183 @@
 
         #root {
             width: 100%;
-            max-width: 950px;
+            max-width: 900px;
         }
         
-        /* --- FILE UPLOADER & ERROR MESSAGE --- */
-        .initial-screen {
+        /* --- File Uploader --- */
+        .file-uploader {
             text-align: center;
             padding: 40px;
-            border: 3px dashed var(--primary-color);
+            border: 2px dashed var(--primary-color);
             border-radius: 15px;
-            background: linear-gradient(135deg, rgba(26, 58, 58, 0.5), rgba(46, 204, 113, 0.1));
-            backdrop-filter: blur(5px);
+            background-color: rgba(0,0,0,0.2);
         }
-        .initial-screen h1 {
+        .file-uploader h1 {
             margin-top: 0;
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            background: linear-gradient(90deg, var(--primary-color), var(--highlight-color));
             -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent; /* Fallback for older browsers */
             -webkit-text-fill-color: transparent;
-            font-size: 2.5em;
         }
         .custom-file-input {
-            background: linear-gradient(90deg, var(--primary-color), #27ae60);
-            color: #162b2b;
-            padding: 12px 30px;
-            border-radius: 30px;
-            border: none;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: bold;
             display: inline-block;
-            transition: all 0.3s ease;
-            box-shadow: 0px 4px 15px rgba(46, 204, 113, 0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .custom-file-input:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0px 8px 25px rgba(46, 204, 113, 0.4);
+            transform: scale(1.05);
+            box-shadow: 0px 5px 20px rgba(142, 68, 173, 0.5);
         }
-        #videoFileInput { display: none; }
-        
-        .error-message {
-            background-color: var(--error-color);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
+        #videoFileInput {
+            display: none;
         }
-        .error-message h3 { margin-top: 0; }
         
-        /* --- PLAYER WRAPPER --- */
+        /* --- Player Wrapper --- */
         .player-wrapper {
-            position: relative; width: 100%;
-            overflow: hidden; border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             background-color: #000;
         }
-        video { width: 100%; display: block; }
-        
-        /* --- OVERLAYS & CONTROLS --- */
-        .overlay-container {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none;
+        video {
+            width: 100%;
+            display: block;
         }
+
+        /* --- Overlays And Controls --- */
+        .overlay-container {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none; /* Allows clicks to go through to video */
+        }
+        
         .center-play-pause-animation {
-            position: absolute; top: 50%; left: 50%;
+            position: absolute;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%) scale(1.5);
-            font-size: 60px; background-color: rgba(0,0,0,0.6);
-            color: white; border-radius: 50%; padding: 20px;
-            opacity: 0; transition: all 0.4s ease;
+            font-size: 60px;
+            background-color: rgba(0,0,0,0.5);
+            color: white;
+            border-radius: 50%;
+            padding: 20px;
+            opacity: 0;
+            transition: all 0.4s ease;
         }
         .center-play-pause-animation.show {
-            transform: translate(-50%, -50%) scale(1); opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
         }
         
         .controls-container {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            padding: 5px; box-sizing: border-box;
-            background: linear-gradient(to top, rgba(10,20,20,0.9), transparent);
-            opacity: 1; transition: opacity 0.3s ease-out;
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            padding: 5px;
+            box-sizing: border-box;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            opacity: 1;
+            transition: opacity 0.3s ease-out;
+            pointer-events: auto;
         }
         .player-wrapper.hide-controls .controls-container {
-            opacity: 0; pointer-events: none;
+            opacity: 0;
+            pointer-events: none;
         }
-        
+
         /* Timeline */
-        .timeline-container { padding: 5px 10px; cursor: pointer; }
-        .timeline {
-            height: 6px; background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 6px; transition: height 0.2s;
+        .timeline-container {
+            padding: 5px 10px; 
+            cursor: pointer;
+            /* Prevents text selection on timeline drag */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
-        .timeline-container:hover .timeline { height: 12px; }
+        .timeline {
+            height: 5px; background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 5px; transition: height 0.2s ease-in-out;
+        }
+        .timeline-container:hover .timeline { height: 10px; }
         .timeline-progress {
-            height: 100%; width: 0%; border-radius: 6px;
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            height: 100%; width: 0%; border-radius: 5px;
+            background: linear-gradient(90deg, var(--primary-color), var(--highlight-color));
             position: relative;
         }
-        .timeline-progress::after {
-            content: ''; position: absolute; right: 0; top: 50%;
-            transform: translate(50%, -50%) scale(0); width: 20px; height: 20px;
-            background-color: var(--text-color); border-radius: 50%;
-            transition: transform 0.2s;
+        .timeline-progress::after { /* Scrubber handle */
+            content: '';
+            position: absolute; right: 0; top: 50%;
+            transform: translate(50%, -50%) scale(0);
+            width: 18px; height: 18px;
+            background-color: var(--text-color);
+            border-radius: 50%;
+            transition: transform 0.2s ease-in-out;
         }
         .timeline-container:hover .timeline-progress::after {
             transform: translate(50%, -50%) scale(1);
         }
-        
+
         /* Main Controls */
         .main-controls {
             display: flex; justify-content: space-between; align-items: center;
             padding: 5px 10px;
         }
-        .left-controls, .right-controls { display: flex; align-items: center; gap: 15px; }
+        .left-controls, .right-controls {
+            display: flex; align-items: center; gap: 15px;
+        }
         .main-controls button {
             background: none; border: none; color: var(--text-color);
             font-size: 18px; cursor: pointer; padding: 5px;
             transition: color 0.2s, transform 0.2s;
         }
         .main-controls button:hover {
-            color: var(--primary-color); transform: scale(1.1);
+            color: var(--highlight-color); transform: scale(1.1);
         }
+
+        .volume-container { display: flex; align-items: center; }
+        /* accent-color is for modern browsers; older ones will use a default slider style */
         #volumeSlider {
-            cursor: pointer; width: 80px; accent-color: var(--primary-color);
+            cursor: pointer; width: 80px; accent-color: var(--highlight-color);
         }
-        
+
         /* Settings Panel */
         .settings-panel {
-            position: absolute; bottom: 65px; right: 15px;
+            position: absolute;
+            bottom: 65px; /* Adjust based on controls height */
+            right: 15px;
             background: var(--controls-bg);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(46, 204, 113, 0.3);
-            border-radius: 10px; padding: 15px; width: 200px;
-            opacity: 0; transform: translateY(10px);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px); /* For Safari */
+            border-radius: 10px;
+            padding: 15px;
+            width: 200px;
+            opacity: 0;
+            transform: translateY(10px);
             pointer-events: none;
             transition: opacity 0.2s ease, transform 0.2s ease;
         }
-        .settings-panel.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .settings-panel.show {
+            opacity: 1; transform: translateY(0); pointer-events: auto;
+        }
         .setting { margin-bottom: 10px; }
-        .setting label { font-weight: 600; margin-bottom: 5px; display: block; color: var(--primary-color); }
+        .setting label { font-weight: 600; margin-bottom: 5px; display: block; }
         .setting select {
-            width: 100%; background-color: var(--bg-color); color: var(--text-color);
-            border: 1px solid var(--primary-color); border-radius: 5px; padding: 5px;
+            width: 100%;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--primary-color);
+            border-radius: 5px;
+            padding: 5px;
         }
         .setting select:focus {
-            outline: none; box-shadow: 0 0 0 2px var(--secondary-color);
+            outline: 2px solid var(--highlight-color);
         }
     </style>
 </head>
@@ -188,37 +226,21 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
 
-        // --- Helper Functions ---
+        // --- Helper Function ---
         const formatTime = (timeInSeconds) => {
-            if (isNaN(timeInSeconds)) return "00:00";
+            if (isNaN(timeInSeconds) || timeInSeconds < 0) return "00:00";
             const date = new Date(timeInSeconds * 1000);
             const hh = date.getUTCHours();
             const mm = date.getUTCMinutes().toString().padStart(2, '0');
             const ss = date.getUTCSeconds().toString().padStart(2, '0');
-            return hh ? `${hh}:${mm}:${ss}` : `${mm}:${ss}`;
-        };
-
-        // --- NEW: More compatible fullscreen function ---
-        const toggleFullscreen = (element) => {
-            if (!document.fullscreenElement) {
-                if (element.requestFullscreen) {
-                    element.requestFullscreen();
-                } else if (element.mozRequestFullScreen) { // Firefox
-                    element.mozRequestFullScreen();
-                } else if (element.webkitRequestFullscreen) { // Chrome, Safari, Opera
-                    element.webkitRequestFullscreen();
-                } else if (element.msRequestFullscreen) { // IE/Edge
-                    element.msRequestFullscreen();
-                }
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
+            if (hh) {
+                return `${hh}:${mm}:${ss}`;
             }
+            return `${mm}:${ss}`;
         };
-
+        
         // --- VideoPlayer Component ---
-        const VideoPlayer = ({ videoFile, onPlaybackError }) => {
+        const VideoPlayer = ({ videoFile }) => {
             const videoRef = useRef(null);
             const playerWrapperRef = useRef(null);
             const timelineRef = useRef(null);
@@ -236,55 +258,60 @@
             const [selectedAudioTrack, setSelectedAudioTrack] = useState(0);
             const [showCenterIcon, setShowCenterIcon] = useState('');
 
+            // --- Effects ---
             useEffect(() => {
                 const video = videoRef.current;
-                if (!video) return;
+                if (!video || !videoFile) return;
 
-                video.src = URL.createObjectURL(videoFile);
-                video.load();
+                // Create a URL for the selected local file
+                const videoUrl = URL.createObjectURL(videoFile);
+                video.src = videoUrl;
+                video.load(); // Load the new source
 
-                const handleLoadedMetadata = () => setDuration(video.duration);
-                const handleCanPlay = () => {
-                    setAudioTracks(Array.from(video.audioTracks));
-                    video.play();
-                }
+                const handleLoadedMetadata = () => {
+                    setDuration(video.duration);
+                    // The audioTracks API may not be supported or populated in all browsers/formats.
+                    if (video.audioTracks) {
+                        setAudioTracks(Array.from(video.audioTracks));
+                    }
+                    video.play().catch(error => {
+                        console.error("Autoplay was prevented:", error);
+                        // Autoplay can be blocked by the browser. The user will need to click to play.
+                        setIsPlaying(false);
+                    });
+                };
+
                 const handleTimeUpdate = () => setCurrentTime(video.currentTime);
                 const handlePlay = () => setIsPlaying(true);
                 const handlePause = () => setIsPlaying(false);
                 const handleVolumeChange = () => {
-                    setIsMuted(video.muted);
-                    setVolume(video.volume);
+                    if (video) {
+                        setIsMuted(video.muted);
+                        setVolume(video.volume);
+                    }
                 };
                 const handleEnded = () => setIsPlaying(false);
-                
-                // --- NEW: Error Handling ---
-                const handleError = () => {
-                   onPlaybackError();
-                };
 
                 video.addEventListener('loadedmetadata', handleLoadedMetadata);
-                video.addEventListener('canplay', handleCanPlay);
                 video.addEventListener('timeupdate', handleTimeUpdate);
                 video.addEventListener('play', handlePlay);
                 video.addEventListener('pause', handlePause);
                 video.addEventListener('volumechange', handleVolumeChange);
                 video.addEventListener('ended', handleEnded);
-                video.addEventListener('error', handleError);
 
                 return () => {
+                    // Cleanup: remove listeners and revoke the object URL to free memory
                     video.removeEventListener('loadedmetadata', handleLoadedMetadata);
-                    video.removeEventListener('canplay', handleCanPlay);
                     video.removeEventListener('timeupdate', handleTimeUpdate);
                     video.removeEventListener('play', handlePlay);
                     video.removeEventListener('pause', handlePause);
                     video.removeEventListener('volumechange', handleVolumeChange);
                     video.removeEventListener('ended', handleEnded);
-                    video.removeEventListener('error', handleError);
-                    URL.revokeObjectURL(video.src);
+                    URL.revokeObjectURL(videoUrl);
                 };
-            }, [videoFile, onPlaybackError]);
-
-            // Handlers and other effects (mostly unchanged)...
+            }, [videoFile]);
+            
+            // Effect for center play/pause icon animation
             useEffect(() => {
                 if(showCenterIcon) {
                     const timeout = setTimeout(() => setShowCenterIcon(''), 500);
@@ -292,99 +319,189 @@
                 }
             }, [showCenterIcon]);
 
+            // --- Handlers ---
             const togglePlay = useCallback(() => {
                 const video = videoRef.current;
+                if (!video) return;
+                
                 if (video.paused) {
-                    video.play().catch(onPlaybackError);
+                    video.play();
                     setShowCenterIcon('play');
                 } else {
                     video.pause();
                     setShowCenterIcon('pause');
                 }
-            }, [onPlaybackError]);
+            }, []);
+
+            const handleVolumeChange = (e) => {
+                const newVolume = parseFloat(e.target.value);
+                if (videoRef.current) {
+                    videoRef.current.volume = newVolume;
+                    videoRef.current.muted = newVolume === 0;
+                }
+            };
+
+            const toggleMute = () => {
+                if (videoRef.current) {
+                    videoRef.current.muted = !videoRef.current.muted;
+                }
+            };
+
+            const handleTimelineScrub = (e) => {
+                const timeline = timelineRef.current;
+                if (!timeline || !videoRef.current) return;
+                const rect = timeline.getBoundingClientRect();
+                // Ensure click is within bounds
+                const percent = Math.min(Math.max(0, e.clientX - rect.left), rect.width) / rect.width;
+                videoRef.current.currentTime = percent * duration;
+            };
+
+            const handleSpeedChange = (e) => {
+                const newRate = parseFloat(e.target.value);
+                if (videoRef.current) {
+                    videoRef.current.playbackRate = newRate;
+                    setPlaybackRate(newRate);
+                }
+            };
+
+            const handleAudioTrackChange = (e) => {
+                const trackIndex = parseInt(e.target.value, 10);
+                if (videoRef.current && videoRef.current.audioTracks) {
+                    for (let i = 0; i < videoRef.current.audioTracks.length; i++) {
+                        videoRef.current.audioTracks[i].enabled = (i === trackIndex);
+                    }
+                    setSelectedAudioTrack(trackIndex);
+                }
+            };
             
+            // **IMPROVEMENT**: Cross-browser fullscreen request.
+            const toggleFullscreen = () => {
+                const player = playerWrapperRef.current;
+                if (!player) return;
+
+                const isInFullScreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+
+                if (!isInFullScreen) {
+                    if (player.requestFullscreen) {
+                        player.requestFullscreen();
+                    } else if (player.mozRequestFullScreen) { /* Firefox */
+                        player.mozRequestFullScreen();
+                    } else if (player.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+                        player.webkitRequestFullscreen();
+                    } else if (player.msRequestFullscreen) { /* IE/Edge */
+                        player.msRequestFullscreen();
+                    }
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.mozCancelFullScreen) { /* Firefox */
+                        document.mozCancelFullScreen();
+                    } else if (document.webkitExitFullscreen) { /* Chrome, Safari & Opera */
+                        document.webkitExitFullscreen();
+                    } else if (document.msExitFullscreen) { /* IE/Edge */
+                        document.msExitFullscreen();
+                    }
+                }
+            };
+
+            const handleMouseMove = () => {
+                setShowControls(true);
+                clearTimeout(controlsTimeoutRef.current);
+                if (videoRef.current && !videoRef.current.paused) {
+                    controlsTimeoutRef.current = setTimeout(() => {
+                       setShowControls(false);
+                    }, 3000);
+                }
+            };
+
             useEffect(() => {
                 const handleKeyDown = (e) => {
-                    if (document.activeElement.tagName.toLowerCase().match(/input|select/)) return;
+                    const activeEl = document.activeElement;
+                    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT')) return;
+                    
                     switch (e.key.toLowerCase()) {
-                        case ' ': e.preventDefault(); togglePlay(); break;
-                        case 'm': videoRef.current.muted = !videoRef.current.muted; break;
-                        case 'f': toggleFullscreen(playerWrapperRef.current); break;
-                        case 'arrowright': videoRef.current.currentTime += 5; break;
-                        case 'arrowleft': videoRef.current.currentTime -= 5; break;
+                        case ' ': 
+                        case 'k': // Common convention
+                            e.preventDefault(); 
+                            togglePlay(); 
+                            break;
+                        case 'm': toggleMute(); break;
+                        case 'f': toggleFullscreen(); break;
+                        case 'arrowright': 
+                            if(videoRef.current) videoRef.current.currentTime += 5; 
+                            break;
+                        case 'arrowleft': 
+                            if(videoRef.current) videoRef.current.currentTime -= 5; 
+                            break;
                     }
                 };
                 document.addEventListener('keydown', handleKeyDown);
                 return () => document.removeEventListener('keydown', handleKeyDown);
-            }, [togglePlay]);
-            
-            const handleMouseMove = () => {
-                setShowControls(true);
-                clearTimeout(controlsTimeoutRef.current);
-                if (!videoRef.current.paused) {
-                  controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
-                }
-            };
-            
-            const handleAudioTrackChange = (e) => {
-                const trackIndex = parseInt(e.target.value, 10);
-                videoRef.current.audioTracks.forEach((track, index) => {
-                    track.enabled = (index === trackIndex);
-                });
-                setSelectedAudioTrack(trackIndex);
-            };
-            
-            // Render logic...
+            }, [togglePlay]); // Keep dependency for correctness
+
+
+            const progressPercent = (currentTime / duration) * 100 || 0;
+            const volumeIcon = isMuted || volume === 0 ? 'fa-volume-xmark' : volume < 0.5 ? 'fa-volume-low' : 'fa-volume-high';
+
             return (
                 <div 
                     ref={playerWrapperRef} 
-                    className={`player-wrapper ${!showControls || isSettingsOpen ? '' : 'hide-controls'}`}
+                    className={`player-wrapper ${!showControls ? 'hide-controls' : ''}`}
                     onMouseMove={handleMouseMove}
-                    onMouseLeave={() => { if(!videoRef.current.paused) setShowControls(false) }}
+                    onMouseLeave={() => {
+                        if(videoRef.current && !videoRef.current.paused) setShowControls(false)
+                    }}
                 >
                     <video ref={videoRef} onClick={togglePlay}></video>
-                    {/* Other JSX for overlays and controls... */}
+
                     <div className="overlay-container">
                         <div className={`center-play-pause-animation ${showCenterIcon ? 'show' : ''}`}>
                              <i className={`fas ${showCenterIcon === 'play' ? 'fa-play' : 'fa-pause'}`}></i>
                         </div>
                     </div>
+
                     <div className="controls-container">
-                        {/* Timeline */}
-                        <div className="timeline-container" ref={timelineRef} onClick={(e) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            videoRef.current.currentTime = ((e.clientX - rect.left) / rect.width) * duration;
+                        <div className="timeline-container" ref={timelineRef} onMouseDown={(e) => {
+                            // Allows dragging on the timeline
+                            handleTimelineScrub(e);
+                            const onScrubMove = (moveEvent) => handleTimelineScrub(moveEvent);
+                            const onScrubEnd = () => {
+                                document.removeEventListener('mousemove', onScrubMove);
+                                document.removeEventListener('mouseup', onScrubEnd);
+                            };
+                            document.addEventListener('mousemove', onScrubMove);
+                            document.addEventListener('mouseup', onScrubEnd);
                         }}>
                             <div className="timeline">
-                                <div className="timeline-progress" style={{ width: `${(currentTime / duration) * 100 || 0}%` }}></div>
+                                <div className="timeline-progress" style={{ width: `${progressPercent}%` }}></div>
                             </div>
                         </div>
 
-                        {/* Controls */}
                         <div className="main-controls">
                             <div className="left-controls">
-                                <button onClick={togglePlay}><i className={`fas ${isPlaying ? 'fa-pause' : 'fa-play'}`}></i></button>
+                                <button onClick={togglePlay} aria-label={isPlaying ? "Pause" : "Play"}><i className={`fas ${isPlaying ? 'fa-pause' : 'fa-play'}`}></i></button>
                                 <div className="volume-container">
-                                    <button onClick={() => videoRef.current.muted = !videoRef.current.muted}><i className={`fas ${isMuted || volume === 0 ? 'fa-volume-xmark' : volume < 0.5 ? 'fa-volume-low' : 'fa-volume-high'}`}></i></button>
-                                    <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value={volume} onChange={(e) => videoRef.current.volume = e.target.value} />
+                                    <button onClick={toggleMute} aria-label={isMuted ? "Unmute" : "Mute"}><i className={`fas ${volumeIcon}`}></i></button>
+                                    <input type="range" id="volumeSlider" title="volume" min="0" max="1" step="0.01" value={isMuted ? 0 : volume} onChange={handleVolumeChange} />
                                 </div>
                                 <span>{formatTime(currentTime)} / {formatTime(duration)}</span>
                             </div>
                             <div className="right-controls">
-                                <button onClick={() => setIsSettingsOpen(!isSettingsOpen)}><i className="fas fa-cog"></i></button>
-                                <button onClick={() => toggleFullscreen(playerWrapperRef.current)}><i className="fas fa-expand"></i></button>
+                                <button onClick={() => setIsSettingsOpen(prev => !prev)} aria-label="Settings"><i className="fas fa-cog"></i></button>
+                                <button onClick={toggleFullscreen} aria-label="Toggle Fullscreen"><i className="fas fa-expand"></i></button>
                             </div>
                         </div>
                     </div>
-                    {/* Settings Panel */}
+                    
                     <div className={`settings-panel ${isSettingsOpen ? 'show' : ''}`}>
-                         <div className="setting">
+                        <div className="setting">
                             <label htmlFor="speed">Playback Speed</label>
-                            <select id="speed" value={playbackRate} onChange={(e) => {
-                                videoRef.current.playbackRate = parseFloat(e.target.value);
-                                setPlaybackRate(parseFloat(e.target.value));
-                            }}>
-                                <option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1">1x</option><option value="1.5">1.5x</option><option value="2">2x</option>
+                            <select id="speed" value={playbackRate} onChange={handleSpeedChange}>
+                                <option value="0.5">0.5x</option>
+                                <option value="0.75">0.75x</option>
+                                <option value="1">1x (Normal)</option>
+                                <option value="1.5">1.5x</option>
+                                <option value="2">2x</option>
                             </select>
                         </div>
                         {audioTracks.length > 1 ? (
@@ -392,11 +509,15 @@
                                 <label htmlFor="audio-track">Audio Track</label>
                                 <select id="audio-track" value={selectedAudioTrack} onChange={handleAudioTrackChange}>
                                     {audioTracks.map((track, index) => (
-                                        <option key={index} value={index}>{track.label || `Track ${index + 1}`} ({track.language || 'unknown'})</option>
+                                        <option key={index} value={index}>
+                                            {track.label || `Track ${index + 1}`} ({track.language || 'unknown'})
+                                        </option>
                                     ))}
                                 </select>
                             </div>
-                        ) : <p style={{fontSize: '0.8em', textAlign: 'center', opacity: 0.7}}>Single audio track</p>}
+                        ) : (
+                            <p style={{fontSize: '0.8em', textAlign: 'center', opacity: 0.7}}>No multiple audio tracks found.</p>
+                        )}
                     </div>
                 </div>
             );
@@ -405,46 +526,39 @@
         // --- Main App Component ---
         const App = () => {
             const [videoFile, setVideoFile] = useState(null);
-            // --- NEW: State for handling playback errors ---
-            const [error, setError] = useState('');
 
             const handleFileChange = (e) => {
                 const file = e.target.files[0];
-                if (file) {
-                    setError(''); // Reset error on new file selection
+                if (file && file.type.startsWith('video/')) {
+                    setVideoFile(file);
+                } else if (file) {
+                    // Note: Browser support for non-standard video containers like .mkv varies.
+                    // This will allow the file, but it may not play.
+                    console.warn("Selected file is not a standard video type and may not play in the browser:", file.type);
                     setVideoFile(file);
                 }
             };
             
-            const handlePlaybackError = useCallback(() => {
-                setError('Playback Error: This video format or codec may not be supported by your browser. Please try a different file, like an MP4 with H.264 video.');
-                setVideoFile(null); // Return to the upload screen
-            }, []);
-
             if (!videoFile) {
                 return (
-                    <div className="initial-screen">
-                        <h1>Universal Player</h1>
-                        <p>A beautiful player designed to work everywhere. Pick a video to start.</p>
+                    <div className="file-uploader">
+                        <h1>Select A video Cuteeee</h1>
+                        <p>Experience a beautiful, modern video player. Start by selecting a video file from your device.</p>
                         <label htmlFor="videoFileInput" className="custom-file-input">
-                            <i className="fas fa-video"></i> Choose Video File
+                            <i className="fas fa-upload"></i> Choose Video
                         </label>
                         <input type="file" id="videoFileInput" onChange={handleFileChange} accept="video/*,.mkv" />
-                        {error && (
-                            <div className="error-message">
-                                <h3>Oops! Something went wrong.</h3>
-                                <p>{error}</p>
-                            </div>
-                        )}
                     </div>
                 );
             }
 
-            return <VideoPlayer videoFile={videoFile} onPlaybackError={handlePlaybackError} />;
+            return <VideoPlayer videoFile={videoFile} />;
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
         root.render(<App />);
+
     </script>
 </body>
 </html>
